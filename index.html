@@ -232,7 +232,7 @@
             // For now, just log to the console.
             // You can add further logic to handle the win condition as needed.
           }
-          console.log("change player");
+          console.log("change player first if statement");
           currentPlayer = currentPlayer === "Red" ? "Blue" : "Red";
         } else if (dragging[currentPlayer]) {
           console.log("removing token");
@@ -261,6 +261,25 @@
             if (index !== -1) {
               selectedTokens[currentPlayer].splice(index, 1);
               grid[row][col] = " ";
+
+              // Allow placing a removed token in an adjacent node
+              const isMaxTokensPlayed =
+                selectedTokens[currentPlayer].length === MAX_TOKENS;
+              if (isMaxTokensPlayed) {
+                const isValidAdjacentNode = adjacentNodes.some(
+                  ([adjRow, adjCol]) =>
+                    adjRow >= 0 &&
+                    adjRow < GRID_SIZE &&
+                    adjCol >= 0 &&
+                    adjCol < GRID_SIZE &&
+                    grid[adjRow][adjCol] === " "
+                );
+
+                if (isValidAdjacentNode) {
+                  // Set the player to the opponent
+                  currentPlayer = currentPlayer === "Red" ? "Blue" : "Red";
+                }
+              }
             }
           }
         }
