@@ -7,7 +7,7 @@
     <style>
       body {
         display: flex;
-        justify-content: center;
+        flex-direction: column;
         align-items: center;
         height: 100vh;
         margin: 0;
@@ -29,6 +29,23 @@
         margin-top: 20px;
         margin-bottom: 5px;
       }
+      .footer {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .expandable-textbox {
+        max-height: 50px;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+      }
+
+      #expand-button {
+        cursor: pointer;
+        color: blue;
+      }
 
       @media screen and (max-width: 600px) {
         #title {
@@ -46,6 +63,16 @@
       </p>
       <canvas id="gameCanvas"></canvas>
     </div>
+    <div class="footer">
+        <div class="expandable-textbox" id="rules-textbox">
+          <p>Game Rules:</p>
+          <p>You win the game if you have 3 tokens in a row</p>
+          <p>You only have 3 tokens per player</p>
+          <p>You can move your tokens by clicking on them and then clicking on an empty space</p>
+           <p>Have fun!</p>
+        </div>
+        <span id="expand-button" onclick="toggleTextbox()">Read More</span>
+      </div>
     <script>
       const canvas = document.getElementById("gameCanvas");
       // Define constants
@@ -81,7 +108,19 @@
       let animationFrames = 0;
       const animationSpeed = 5;
       let animationDirection = 1;
+    
+      function toggleTextbox() {
+        const textbox = document.getElementById('rules-textbox');
+        const button = document.getElementById('expand-button');
 
+        if (textbox.style.maxHeight) {
+          textbox.style.maxHeight = null;
+          button.innerText = 'Read More';
+        } else {
+          textbox.style.maxHeight = textbox.scrollHeight + 'px';
+          button.innerText = 'Read Less';
+        }
+      }
       // Draw the grid
       function drawGrid() {
         const nodeSize = WIDTH / GRID_SIZE;
