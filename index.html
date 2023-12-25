@@ -1,262 +1,286 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jambo</title>
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
 
-        #game-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+      #game-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
 
-        canvas {
-            border: 2px solid black;
-            background-color: #f0f0f0;
-        }
+      canvas {
+        border: 2px solid black;
+        background-color: #f0f0f0;
+      }
 
+      #title {
+        font-size: 80px;
+        margin-top: 20px;
+        margin-bottom: 5px;
+      }
+
+      @media screen and (max-width: 600px) {
         #title {
-            font-size: 80px;
-            margin-top: 20px; /* Adjust the margin as needed */
-            margin-bottom: 20px; /* Adjust the margin as needed */
+          font-size: 40px; /* Adjust the font size for smaller screens */
         }
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div id="game-container">
-        <h1 id="title">Jambo</h1>
-        <canvas id="gameCanvas" width="1000" height="1000"></canvas>
+      <h1 id="title">Jambo</h1>
+      <p id="subtitle">
+        A game by <a href="https://github.com/TuresCode">TuresCode</a>
+      </p>
+      <canvas id="gameCanvas"></canvas>
     </div>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+      const canvas = document.getElementById("gameCanvas");
+      // Define constants
+      const WIDTH = 350;
+      const HEIGHT = 350;
+      canvas.width = WIDTH;
+      canvas.height = HEIGHT;
+      const ctx = canvas.getContext("2d");
 
-        // Define constants
-        const WIDTH = 1000;
-        const HEIGHT = 1000;
-        const NODE_SIZE = 50;
-        const GRID_SIZE = 3;
+      const NODE_SIZE = 50;
+      const GRID_SIZE = 3;
 
-        // Colors
-        const WHITE = '#ffffff';
-        const BLACK = '#000000';
-        const RED = '#ff0000';
-        const BLUE = '#0000ff';
-        const MAX_TOKENS = 3;
+      // Colors
+      const WHITE = "#ffffff";
+      const BLACK = "#000000";
+      const RED = "#ff0000";
+      const BLUE = "#0000ff";
+      const MAX_TOKENS = 3;
 
-        // Define game state
-        const grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(' '));
+      // Define game state
+      const grid = Array.from({ length: GRID_SIZE }, () =>
+        Array(GRID_SIZE).fill(" ")
+      );
 
-        // Additional state variables
-        const selectedTokens = { 'Red': [], 'Blue': [] };
-        const dragging = { 'Red': false, 'Blue': false };
-        let currentPlayer = 'Red';
-        let winner = null;
-        let winAnimationFrames = 0;
+      // Additional state variables
+      const selectedTokens = { Red: [], Blue: [] };
+      const dragging = { Red: false, Blue: false };
+      let currentPlayer = "Red";
+      let winner = null;
+      let winAnimationFrames = 0;
 
-        // Winner animation state
-        let animationFrames = 0;
-        const animationSpeed = 5;
-        let animationDirection = 1;
+      // Winner animation state
+      let animationFrames = 0;
+      const animationSpeed = 5;
+      let animationDirection = 1;
 
-        // Draw the grid
-        function drawGrid() {
-            const nodeSize = WIDTH / GRID_SIZE;
+      // Draw the grid
+      function drawGrid() {
+        const nodeSize = WIDTH / GRID_SIZE;
 
-            for (let i = 0; i < GRID_SIZE; i++) {
-                ctx.beginPath();
-                ctx.moveTo((i + 0.5) * nodeSize, 0);
-                ctx.lineTo((i + 0.5) * nodeSize, HEIGHT);
-                ctx.strokeStyle = BLACK;
-                ctx.stroke();
+        for (let i = 0; i < GRID_SIZE; i++) {
+          ctx.beginPath();
+          ctx.moveTo((i + 0.5) * nodeSize, 0);
+          ctx.lineTo((i + 0.5) * nodeSize, HEIGHT);
+          ctx.strokeStyle = BLACK;
+          ctx.stroke();
 
-                ctx.beginPath();
-                ctx.moveTo(0, (i + 0.5) * nodeSize);
-                ctx.lineTo(WIDTH, (i + 0.5) * nodeSize);
-                ctx.strokeStyle = BLACK;
-                ctx.stroke();
-            }
+          ctx.beginPath();
+          ctx.moveTo(0, (i + 0.5) * nodeSize);
+          ctx.lineTo(WIDTH, (i + 0.5) * nodeSize);
+          ctx.strokeStyle = BLACK;
+          ctx.stroke();
+        }
 
-            // Draw diagonal lines connecting border nodes with the middle node
+        // Draw diagonal lines connecting border nodes with the middle node
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(WIDTH, HEIGHT);
+        ctx.strokeStyle = BLACK;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, HEIGHT);
+        ctx.lineTo(WIDTH, 0);
+        ctx.strokeStyle = BLACK;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // Draw tokens on the grid
+      function drawTokens() {
+        for (const [player, tokens] of Object.entries(selectedTokens)) {
+          for (const token of tokens) {
+            const [row, col] = token;
+            const color = player === "Red" ? RED : BLUE;
+
             ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(WIDTH, HEIGHT);
-            ctx.strokeStyle = BLACK;
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            ctx.arc(
+              (col * WIDTH) / GRID_SIZE + WIDTH / (2 * GRID_SIZE),
+              (row * HEIGHT) / GRID_SIZE + HEIGHT / (2 * GRID_SIZE),
+              NODE_SIZE / 2,
+              0,
+              2 * Math.PI
+            );
+            ctx.fillStyle = color;
+            ctx.fill();
+          }
+        }
+
+        // Draw winning animation
+        if (winner !== null) {
+          ctx.globalAlpha = Math.sin((Math.PI / 2) * (winAnimationFrames / 60));
+          for (const token of selectedTokens[winner]) {
+            const [row, col] = token;
+            const color = winner === "Red" ? RED : BLUE;
 
             ctx.beginPath();
-            ctx.moveTo(0, HEIGHT);
-            ctx.lineTo(WIDTH, 0);
-            ctx.strokeStyle = BLACK;
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            ctx.arc(
+              (col * WIDTH) / GRID_SIZE + WIDTH / (2 * GRID_SIZE),
+              (row * HEIGHT) / GRID_SIZE + HEIGHT / (2 * GRID_SIZE),
+              NODE_SIZE / 2,
+              0,
+              2 * Math.PI
+            );
+            ctx.fillStyle = color;
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      // Winner animation function
+      function animateWinner() {
+        for (const token of selectedTokens[winner]) {
+          const [row, col] = token;
+          const color = winner === "Red" ? RED : BLUE;
+
+          ctx.beginPath();
+          ctx.arc(
+            (col * WIDTH) / GRID_SIZE + WIDTH / (2 * GRID_SIZE),
+            (row * HEIGHT) / GRID_SIZE + HEIGHT / (2 * GRID_SIZE),
+            NODE_SIZE / 2 + Math.sin(animationFrames / 10) * 5, // Bouncing effect
+            0,
+            2 * Math.PI
+          );
+          ctx.fillStyle = color;
+          ctx.fill();
+        }
+      }
+
+      // Check for a win
+      function checkWin(player) {
+        // Check rows and columns
+        for (let i = 0; i < GRID_SIZE; i++) {
+          if (
+            grid[i].every((cell) => cell === player) ||
+            grid.every((row) => row[i] === player)
+          ) {
+            winner = player;
+            return true;
+          }
         }
 
-        // Draw tokens on the grid
-        function drawTokens() {
-            for (const [player, tokens] of Object.entries(selectedTokens)) {
-                for (const token of tokens) {
-                    const [row, col] = token;
-                    const color = player === 'Red' ? RED : BLUE;
-
-                    ctx.beginPath();
-                    ctx.arc(
-                        col * WIDTH / GRID_SIZE + WIDTH / (2 * GRID_SIZE),
-                        row * HEIGHT / GRID_SIZE + HEIGHT / (2 * GRID_SIZE),
-                        NODE_SIZE / 2,
-                        0,
-                        2 * Math.PI
-                    );
-                    ctx.fillStyle = color;
-                    ctx.fill();
-                }
-            }
-
-            // Draw winning animation
-            if (winner !== null) {
-                ctx.globalAlpha = Math.sin((Math.PI / 2) * (winAnimationFrames / 60));
-                for (const token of selectedTokens[winner]) {
-                    const [row, col] = token;
-                    const color = winner === 'Red' ? RED : BLUE;
-
-                    ctx.beginPath();
-                    ctx.arc(
-                        col * WIDTH / GRID_SIZE + WIDTH / (2 * GRID_SIZE),
-                        row * HEIGHT / GRID_SIZE + HEIGHT / (2 * GRID_SIZE),
-                        NODE_SIZE / 2,
-                        0,
-                        2 * Math.PI
-                    );
-                    ctx.fillStyle = color;
-                    ctx.fill();
-                }
-                ctx.globalAlpha = 1;
-            }
+        // Check diagonals
+        if (
+          grid.every((row, i) => row[i] === player) ||
+          grid.every((row, i) => row[GRID_SIZE - 1 - i] === player)
+        ) {
+          winner = player;
+          return true;
         }
 
-        // Winner animation function
-        function animateWinner() {
-            for (const token of selectedTokens[winner]) {
-                const [row, col] = token;
-                const color = winner === 'Red' ? RED : BLUE;
+        return false;
+      }
 
-                ctx.beginPath();
-                ctx.arc(
-                    col * WIDTH / GRID_SIZE + WIDTH / (2 * GRID_SIZE),
-                    row * HEIGHT / GRID_SIZE + HEIGHT / (2 * GRID_SIZE),
-                    NODE_SIZE / 2 + Math.sin(animationFrames / 10) * 5, // Bouncing effect
-                    0,
-                    2 * Math.PI
-                );
-                ctx.fillStyle = color;
-                ctx.fill();
-            }
+      // Handle mouse click
+      function handleMouseClick(event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        const col = Math.floor(x / (WIDTH / GRID_SIZE));
+        const row = Math.floor(y / (HEIGHT / GRID_SIZE));
+
+        if (
+          grid[row][col] === " " &&
+          selectedTokens[currentPlayer].length < MAX_TOKENS
+        ) {
+          grid[row][col] = currentPlayer;
+          selectedTokens[currentPlayer].push([row, col]);
+
+          if (selectedTokens[currentPlayer].length === MAX_TOKENS) {
+            dragging[currentPlayer] = true;
+          }
+
+          if (checkWin(currentPlayer)) {
+            console.log(`Player ${currentPlayer} wins!`);
+
+            // popup for the winner
+            winAnimationFrames = 10;
+            alert(`Player ${currentPlayer} wins!`);
+            // You may want to handle the win condition differently in JavaScript.
+            // For now, just log to the console.
+            // You can add further logic to handle the win condition as needed.
+          }
+          console.log("change player");
+          currentPlayer = currentPlayer === "Red" ? "Blue" : "Red";
+        } else if (dragging[currentPlayer]) {
+          console.log("removing token");
+          const index = selectedTokens[currentPlayer].findIndex(
+            (token) => token[0] === row && token[1] === col
+          );
+          if (index !== -1) {
+            selectedTokens[currentPlayer].splice(index, 1);
+            grid[row][col] = " ";
+          }
         }
+      }
 
-        // Check for a win
-        function checkWin(player) {
-            // Check rows and columns
-            for (let i = 0; i < GRID_SIZE; i++) {
-                if (grid[i].every(cell => cell === player) || grid.every(row => row[i] === player)) {
-                    winner = player;
-                    return true;
-                }
-            }
+      // Add event listener for mouse click
+      canvas.addEventListener("click", handleMouseClick);
 
-            // Check diagonals
-            if (grid.every((row, i) => row[i] === player) || grid.every((row, i) => row[GRID_SIZE - 1 - i] === player)) {
-                winner = player;
-                return true;
-            }
-
-            return false;
-        }
-
-        // Handle mouse click
-        function handleMouseClick(event) {
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-
-            const col = Math.floor(x / (WIDTH / GRID_SIZE));
-            const row = Math.floor(y / (HEIGHT / GRID_SIZE));
-
-            if (grid[row][col] === ' ' && selectedTokens[currentPlayer].length < MAX_TOKENS) {
-                grid[row][col] = currentPlayer;
-                selectedTokens[currentPlayer].push([row, col]);
-
-                if (selectedTokens[currentPlayer].length === MAX_TOKENS) {
-                    dragging[currentPlayer] = true;
-                }
-
-                if (checkWin(currentPlayer)) {
-                    console.log(`Player ${currentPlayer} wins!`);
-
-                    // popup for the winner
-                    winAnimationFrames = 10;
-                    alert(`Player ${currentPlayer} wins!`);
-                    // You may want to handle the win condition differently in JavaScript.
-                    // For now, just log to the console.
-                    // You can add further logic to handle the win condition as needed.
-                }
-                console.log("change player");
-                currentPlayer = currentPlayer === 'Red' ? 'Blue' : 'Red';
-            } else if (dragging[currentPlayer]) {
-                console.log("removing token");
-                const index = selectedTokens[currentPlayer].findIndex(token => token[0] === row && token[1] === col);
-                if (index !== -1) {
-                    selectedTokens[currentPlayer].splice(index, 1);
-                    grid[row][col] = ' ';
-                }
-            }
-        }
-
-        // Add event listener for mouse click
-        canvas.addEventListener('click', handleMouseClick);
-
-        // Main game loop
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawGrid();
-            drawTokens();
+      // Main game loop
+      function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+        drawTokens();
 
         // Winning animation countdown
         if (winAnimationFrames > 0) {
-                        winAnimationFrames--;
+          winAnimationFrames--;
 
-                        // Start winner animation
-                        if (winAnimationFrames === 0) {
-                            animationFrames = 0;
-                            setInterval(() => {
-                                animationFrames += animationDirection * animationSpeed;
-                                if (animationFrames >= 30 || animationFrames <= 0) {
-                                    animationDirection *= -1;
-                                }
-                            }, 1000 / 60);
-                        }
-                    }
+          // Start winner animation
+          if (winAnimationFrames === 0) {
+            animationFrames = 0;
+            setInterval(() => {
+              animationFrames += animationDirection * animationSpeed;
+              if (animationFrames >= 30 || animationFrames <= 0) {
+                animationDirection *= -1;
+              }
+            }, 1000 / 60);
+          }
+        }
 
-                    // Play winner animation
-                    if (animationFrames > 0) {
-                        animateWinner();
-                    }
+        // Play winner animation
+        if (animationFrames > 0) {
+          animateWinner();
+        }
 
-                    requestAnimationFrame(gameLoop);
-                }
+        requestAnimationFrame(gameLoop);
+      }
 
-                // Start the game loop
-                gameLoop();
-            </script>
-        </body>
-        </html>
+      // Start the game loop
+      gameLoop();
+    </script>
+  </body>
+</html>
