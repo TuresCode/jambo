@@ -236,16 +236,35 @@
           currentPlayer = currentPlayer === "Red" ? "Blue" : "Red";
         } else if (dragging[currentPlayer]) {
           console.log("removing token");
-          const index = selectedTokens[currentPlayer].findIndex(
-            (token) => token[0] === row && token[1] === col
+
+          // Check if the node to the left, right, top, or bottom is free
+          const adjacentNodes = [
+            [row - 1, col], // Top
+            [row + 1, col], // Bottom
+            [row, col - 1], // Left
+            [row, col + 1], // Right
+          ];
+
+          const isAdjacentNodeFree = adjacentNodes.some(
+            ([adjRow, adjCol]) =>
+              adjRow >= 0 &&
+              adjRow < GRID_SIZE &&
+              adjCol >= 0 &&
+              adjCol < GRID_SIZE &&
+              grid[adjRow][adjCol] === " "
           );
-          if (index !== -1) {
-            selectedTokens[currentPlayer].splice(index, 1);
-            grid[row][col] = " ";
+
+          if (isAdjacentNodeFree) {
+            const index = selectedTokens[currentPlayer].findIndex(
+              (token) => token[0] === row && token[1] === col
+            );
+            if (index !== -1) {
+              selectedTokens[currentPlayer].splice(index, 1);
+              grid[row][col] = " ";
+            }
           }
         }
       }
-
       // Add event listener for mouse click
       canvas.addEventListener("click", handleMouseClick);
 
